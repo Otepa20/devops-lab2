@@ -21,9 +21,10 @@ MARKER_DEFAULT = "boxlab"
 # Слово-маркер: из переменной окружения MARKER, а если её нет — из строки выше.
 MARKER = os.environ.get("MARKER", MARKER_DEFAULT)
 
-# Порт, на котором сервис слушает внутри контейнера. Возьмите из своего
-# варианта колонку «Порт приложения внутри».
-APP_PORT = int(os.environ.get("APP_PORT", "5000"))
+# Порт, на котором сервис слушает внутри контейнера. Значение приходит из
+# переменной окружения APP_PORT, а её задаёт Dockerfile строкой ENV APP_PORT.
+# Значение из колонки «Порт приложения внутри» подставляется там, а не здесь.
+APP_PORT = int(os.environ.get("APP_PORT", "5003"))
 
 app = Flask(__name__)
 # без этого кириллица в JSON уезжает escape-последовательностями и ФИО в ответе
@@ -60,15 +61,7 @@ def me():
     )
 
 
-@app.get("/env")
-def env_info():
-    safe_keys = ["APP_PORT", "MARKER", "LANG", "PATH", "HOSTNAME", "PYTHON_VERSION"]
-    env = {k: os.environ.get(k) for k in safe_keys if os.environ.get(k) is not None}
-    return jsonify(
-        marker=MARKER,
-        env=env,
-        hostname=socket.gethostname(),
-    )
-
 if __name__ == "__main__":
+    # 0.0.0.0, а не 127.0.0.1: внутри контейнера localhost означает «только сам
+    # контейнер», и снаружи такой сервис недоступен.
     app.run(host="0.0.0.0", port=APP_PORT)
